@@ -6,3 +6,4 @@ flask-wtf==1.2.1
 werkzeug==3.0.1
 pillow==10.4.0
 python-dotenv>=1.0.0
+gunicorn
