@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+{% block title %}Request for Use of Funds for Internal Travel and Subsistence{% endblock %}
+{% block content %}
+<div class="page-header no-print">
+    <div class="page-header-left">
+        <h1>Internal Travel &amp; Subsistence Form</h1>
+        <p>Ref: ADM/02/11/13 &nbsp;|&nbsp; {{ 'Review Mode' if mode == 'approve' else 'New Submission' }}</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <button onclick="printForm()" class="btn btn-outline btn-sm"><i class="fas fa-print"></i> Print</button>
+        <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+{% set is_new = (mode == 'new') %}
+{% set fd = form_data if form_data else {} %}
+{% set current_step = sub.current_step if sub else 0 %}
+
+<form method="POST" id="mainForm"
+    action="{% if mode == 'officer' %}{{ url_for('forms.officer_review', token=token) }}{% elif mode == 'approve' %}{{ url_for('forms.admin_approve', sub_id=sub.id) }}{% else %}{{ url_for('forms.new_form', form_type_id=form_type.id) }}{% endif %}">
+
+<div class="official-form">
+
+    <!-- HEADER -->
+    <div class="form-header-top">Revised – 26.7.2021</div>
+    <div class="form-ref">Ref. No.: ADM/02/11/13</div>
+    <div class="form-university-name">MZUZU UNIVERSITY</div>
+    <div class="form-title">REQUEST FOR USE OF FUNDS FOR INTERNAL TRAVEL AND SUBSISTENCE</div>
+    <div class="form-subtitle">(TO BE COMPLETED AND SUBMITTED 48 HOURS BEFORE TRAVEL)</div>
+
+    <hr style="border:1px solid #1a3a5c; margin:10px 0 16px;">
+
+    <!-- SECTION A -->
+    <div class="form-section">
+        <div class="field-line"><span class="section-label">A.</span><span class="form-section-title">DETAILS OF INITIATOR OF REQUEST</span></div>
+
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 0.8fr; gap:8px; margin-bottom:10px;">
+            <div class="field-line">
+                <span class="field-label">Name:</span>
+                <input type="text" name="initiator_name" class="field-input"
+                    value="{{ fd.get('initiator_name', user.full_name if is_new else '') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Post:</span>
+                <input type="text" name="initiator_post" class="field-input"
+                    value="{{ fd.get('initiator_post', user.post if is_new else '') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Grade</span>
+                <input type="text" name="initiator_grade" class="field-input"
+                    value="{{ fd.get('initiator_grade', user.grade if is_new else '') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Department</span><span class="field-label">/Section/Project/Cost Centre –</span>
+            <strong style="font-size:13px;">&nbsp;Water and Sanitation- PEER PROJECT</strong>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+            <div class="field-line">
+                <span class="field-label">Signature</span>
+                {% if is_new %}
+                <div style="flex:1; border-bottom:1px solid #333; min-height:30px; position:relative;">
+                    {% if user and user.signature_path %}
+                    <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px;" alt="sig">
+                    {% else %}
+                    <span style="font-size:10px; color:#aaa; position:absolute; bottom:2px;">No signature on file — upload in Profile</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <input type="text" class="field-input" value="{{ fd.get('initiator_signature','') }}" readonly>
+                {% endif %}
+            </div>
+            <div class="field-line">
+                <span class="field-label">Date</span>
+                <input type="date" name="initiator_date" class="field-input"
+                    value="{{ fd.get('initiator_date','') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+            <p style="font-size:13px; font-weight:700;">Please indicate if any of these funds are to be refunded by a 3<sup>rd</sup> party &nbsp;
+                YES <input type="checkbox" name="refund_third_party_yes" value="yes" {% if fd.get('refund_third_party_yes') %}checked{% endif %} {% if not is_new %}disabled{% endif %}>
+                &nbsp;&nbsp; NO <input type="checkbox" name="refund_third_party_no" value="no" {% if fd.get('refund_third_party_no') %}checked{% endif %} {% if not is_new %}disabled{% endif %}>
+            </p>
+        </div>
+
+        <p style="font-size:12px; margin-bottom:8px;">If any refunds through a 3<sup>rd</sup> party are anticipated, please provide brief details together with any accompanying documentation.</p>
+        <textarea name="refund_details" class="form-control" rows="4" style="font-family:'Times New Roman',serif; font-size:12px; border:1px solid #aaa;"
+            {% if not is_new %}readonly{% endif %}>{{ fd.get('refund_details','') }}</textarea>
+
+        <div style="border:1px solid #aaa; padding:12px; margin-top:14px; font-size:13px;">
+            <p>Note that if there are refunds from a 3<sup>rd</sup> party, the initiator will be responsible for payment of that refund back to Mzuzu University and needs to sign for this obligation below.</p>
+            <div style="margin-top:10px;">
+                <p>I, (Name) <input type="text" name="undertaking_name" class="dotted-input" style="width:220px;"
+                    value="{{ fd.get('undertaking_name','') }}" {% if not is_new %}readonly{% endif %}> ...understand that I am receiving the following amount</p>
+                <p style="margin-top:6px;">MK <input type="text" name="undertaking_amount" class="dotted-input" style="width:140px;"
+                    value="{{ fd.get('undertaking_amount','') }}" {% if not is_new %}readonly{% endif %}> ... as an advance for travel for which I will be reimbursed by a 3<sup>rd</sup> party.</p>
+                <p style="margin-top:6px;">I undertake to repay this amount within 7 days of my return or, failing that, have the amount deducted from my salary.</p>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:12px;">
+                <div class="field-line"><span class="field-label">Name</span><input type="text" name="undertaking_sign_name" class="dotted-input" value="{{ fd.get('undertaking_sign_name','') }}" {% if not is_new %}readonly{% endif %}></div>
+                <div class="field-line"><span class="field-label">Signature</span><input type="text" name="undertaking_signature" class="dotted-input" value="{{ fd.get('undertaking_signature','') }}" {% if not is_new %}readonly{% endif %}></div>
+                <div class="field-line"><span class="field-label">Date</span><input type="date" name="undertaking_date" class="field-input" value="{{ fd.get('undertaking_date','') }}" {% if not is_new %}readonly{% endif %}></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE BREAK -->
+    <div style="page-break-before:always; margin-top:20px;"></div>
+    <div class="form-header-top" style="margin-top:10px;">Revised – 26.7.2021</div>
+
+    <!-- SECTION B -->
+    <div class="form-section">
+        <div class="field-line"><span class="section-label">B.</span><span class="form-section-title">DESCRIPTION OF USE OF FUNDS</span></div>
+        <p style="font-size:12px; margin-bottom:10px;">Please provide information about travel and provide any accompanying documentation, including where financial support, even if partial, is provided by another organization.</p>
+
+        <table class="official-table">
+            <thead>
+                <tr>
+                    <th style="width:18%;">Name(s) including Driver</th>
+                    <th style="width:30%;">Purpose of Travel, destination and duration with departure and return dates</th>
+                    <th style="width:20%;">Fuel / Bus fare requirements (if any) and cost (MK)</th>
+                    <th style="width:20%;">Subsistence requirements (if any) and cost (MK)</th>
+                    <th style="width:12%;">Total Cost (MK)</th>
+                </tr>
+            </thead>
+            <tbody id="travelTbody">
+                {% for i in range(6) %}
+                {% set row_prefix = 'travel_row_' ~ i ~ '_' %}
+                <tr>
+                    <td><input type="text" name="{{ row_prefix }}names" value="{{ fd.get(row_prefix~'names','') }}" {% if not is_new %}readonly{% endif %}></td>
+                    <td><input type="text" name="{{ row_prefix }}purpose" value="{{ fd.get(row_prefix~'purpose','') }}" {% if not is_new %}readonly{% endif %}></td>
+                    <td><input type="text" name="{{ row_prefix }}fuel_bus" value="{{ fd.get(row_prefix~'fuel_bus','') }}" {% if not is_new %}readonly{% endif %}></td>
+                    <td><input type="text" name="{{ row_prefix }}subsistence" value="{{ fd.get(row_prefix~'subsistence','') }}" {% if not is_new %}readonly{% endif %}></td>
+                    <td><input type="text" name="{{ row_prefix }}total" value="{{ fd.get(row_prefix~'total','') }}" {% if not is_new %}readonly{% endif %}></td>
+                </tr>
+                {% endfor %}
+                <tr class="table-total-row">
+                    <td colspan="4"><strong>Total</strong></td>
+                    <td><input type="text" name="travel_grand_total" value="{{ fd.get('travel_grand_total','') }}" {% if not is_new %}readonly{% endif %}></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGE BREAK -->
+    <div style="page-break-before:always; margin-top:20px;"></div>
+    <div class="form-header-top" style="margin-top:10px;">Revised – 26.7.2021</div>
+
+    <!-- SECTION C -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 1 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">C.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">COMMENTS BY HEAD OF DEPARTMENT/COST CENTRE MANAGER</div>
+                <div style="font-size:12px; font-weight:600;">Source of funds (Tick appropriate)</div>
+            </div>
+        </div>
+        <div style="margin-left:20px; margin-bottom:10px;">
+            <div class="form-checkbox-row">
+                <span style="font-size:13px;">a. &nbsp; Self Generated</span>
+                <input type="checkbox" name="source_self_generated" value="yes" {% if fd.get('source_self_generated') %}checked{% endif %} {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}>
+            </div>
+            <div class="form-checkbox-row">
+                <span style="font-size:13px;">b. &nbsp; Project Funds</span>
+                <input type="checkbox" name="source_project_funds" value="yes" {% if fd.get('source_project_funds') %}checked{% endif %} {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}>
+            </div>
+            <div class="form-checkbox-row">
+                <span style="font-size:13px;">c. &nbsp; Subvention</span>
+                <input type="checkbox" name="source_subvention" value="yes" {% if fd.get('source_subvention') %}checked{% endif %} {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}>
+            </div>
+        </div>
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Comment:</span>
+            <input type="text" name="hod_comment" class="field-input" value="{{ fd.get('hod_comment','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px;">
+            <div class="field-line"><span class="field-label">Name:</span><input type="text" name="hod_name" class="field-input" value="{{ fd.get('hod_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 1 %}
+                <div id="sigWidget_hod_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('hod_signature')" id="btnDraw_hod_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('hod_signature')" id="btnType_hod_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_hod_signature" style="display:block;">
+                    <canvas id="canvas_hod_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('hod_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_hod_signature" style="display:none;">
+                    <input type="text" id="typeInput_hod_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('hod_signature')">
+                  </div>
+                  <input type="hidden" name="hod_signature" id="sigData_hod_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 1 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="hod_signature" value="signed">
+{% else %}
+                <input type="text" name="hod_signature" class="field-input" value="{{ fd.get('hod_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="hod_date" class="field-input" value="{{ fd.get('hod_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}></div>
+        </div>
+    </div>
+
+    <!-- SECTION D -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 2 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">D.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">RECOMMENDATION BY DEAN/PRINCIPAL OFFICER</div>
+                <div style="font-size:12px; font-style:italic;">(or 1<sup>st</sup> line supervisor in case of conflict of interest)</div>
+            </div>
+        </div>
+        <p style="font-size:13px; margin-bottom:8px;">I recommend/do not recommend payment</p>
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Comment:</span>
+            <input type="text" name="dean_comment" class="field-input" value="{{ fd.get('dean_comment','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <div class="field-line"><span class="field-label">Name:</span><input type="text" name="dean_name" class="field-input" value="{{ fd.get('dean_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 2 %}
+                <div id="sigWidget_dean_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('dean_signature')" id="btnDraw_dean_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('dean_signature')" id="btnType_dean_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_dean_signature" style="display:block;">
+                    <canvas id="canvas_dean_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('dean_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_dean_signature" style="display:none;">
+                    <input type="text" id="typeInput_dean_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('dean_signature')">
+                  </div>
+                  <input type="hidden" name="dean_signature" id="sigData_dean_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 2 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="dean_signature" value="signed">
+{% else %}
+                <input type="text" name="dean_signature" class="field-input" value="{{ fd.get('dean_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="dean_date" class="field-input" value="{{ fd.get('dean_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}></div>
+        </div>
+    </div>
+
+    <!-- SECTION E -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 3 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">E.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">AVAILABILITY OF BUDGET AND FUNDS</div>
+            </div>
+        </div>
+        <div style="font-size:13px; margin-bottom:8px;">
+            I confirm/do not confirm availability of a) budget
+            <input type="checkbox" name="budget_confirm" value="yes" {% if fd.get('budget_confirm') %}checked{% endif %} {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}disabled{% endif %}>
+            &nbsp; and b) funds
+            <input type="checkbox" name="funds_confirm" value="yes" {% if fd.get('funds_confirm') %}checked{% endif %} {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}disabled{% endif %}>
+            <span style="font-size:11px; font-style:italic; margin-left:8px;">(tick or cross out in the box as appropriate)</span>
+        </div>
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Comment:</span>
+            <input type="text" name="budget_comment" class="field-input" value="{{ fd.get('budget_comment','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}>
+        </div>
+        <div style="display:grid; grid-template-columns:1.5fr 1fr 0.8fr; gap:8px; margin-bottom:4px;">
+            <div class="field-line"><span class="field-label">DOF: Name</span><input type="text" name="dof_name" class="field-input" value="{{ fd.get('dof_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 3 %}
+                <div id="sigWidget_dof_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('dof_signature')" id="btnDraw_dof_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('dof_signature')" id="btnType_dof_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_dof_signature" style="display:block;">
+                    <canvas id="canvas_dof_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('dof_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_dof_signature" style="display:none;">
+                    <input type="text" id="typeInput_dof_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('dof_signature')">
+                  </div>
+                  <input type="hidden" name="dof_signature" id="sigData_dof_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 3 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="dof_signature" value="signed">
+{% else %}
+                <input type="text" name="dof_signature" class="field-input" value="{{ fd.get('dof_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="dof_date" class="field-input" value="{{ fd.get('dof_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}></div>
+        </div>
+        <p style="font-size:12px; font-style:italic; color:#555;">(or MA / FA on DOF's delegation)</p>
+    </div>
+
+    <!-- SECTION F -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 4 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">F.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">COMMENTS BY UNIVERSITY REGISTRAR</div>
+            </div>
+        </div>
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Comment:</span>
+            <input type="text" name="registrar_comment" class="field-input" value="{{ fd.get('registrar_comment','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <div class="field-line"><span class="field-label">Name:</span><input type="text" name="registrar_name" class="field-input" value="{{ fd.get('registrar_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 4 %}
+                <div id="sigWidget_registrar_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('registrar_signature')" id="btnDraw_registrar_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('registrar_signature')" id="btnType_registrar_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_registrar_signature" style="display:block;">
+                    <canvas id="canvas_registrar_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('registrar_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_registrar_signature" style="display:none;">
+                    <input type="text" id="typeInput_registrar_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('registrar_signature')">
+                  </div>
+                  <input type="hidden" name="registrar_signature" id="sigData_registrar_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 4 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="registrar_signature" value="signed">
+{% else %}
+                <input type="text" name="registrar_signature" class="field-input" value="{{ fd.get('registrar_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="registrar_date" class="field-input" value="{{ fd.get('registrar_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}></div>
+        </div>
+    </div>
+
+    <!-- SECTION G -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 5 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">G.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">APPROVAL BY VICE-CHANCELLOR</div>
+            </div>
+        </div>
+        <p style="font-size:13px; margin-bottom:8px;">I approve/do not approve payment from Cost Centre Budget</p>
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Comment:</span>
+            <input type="text" name="vc_comment" class="field-input" value="{{ fd.get('vc_comment','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 5) %}readonly{% endif %}>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <div class="field-line"><span class="field-label">Name:</span><input type="text" name="vc_name" class="field-input" value="{{ fd.get('vc_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 5) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 5 %}
+                <div id="sigWidget_vc_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('vc_signature')" id="btnDraw_vc_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('vc_signature')" id="btnType_vc_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_vc_signature" style="display:block;">
+                    <canvas id="canvas_vc_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('vc_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_vc_signature" style="display:none;">
+                    <input type="text" id="typeInput_vc_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('vc_signature')">
+                  </div>
+                  <input type="hidden" name="vc_signature" id="sigData_vc_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 5 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="vc_signature" value="signed">
+{% else %}
+                <input type="text" name="vc_signature" class="field-input" value="{{ fd.get('vc_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="vc_date" class="field-input" value="{{ fd.get('vc_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 5) %}readonly{% endif %}></div>
+        </div>
+    </div>
+
+    <!-- SECTION H -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 6 %}approval-section active-step{% endif %}">
+        <div class="field-line">
+            <span class="section-label">H.</span>
+            <div style="flex:1;">
+                <div class="form-section-title">AUTHORIZATION OF PAYMENT BY DIRECTOR OF FINANCE</div>
+            </div>
+        </div>
+        <p style="font-size:13px; margin-bottom:8px;">I acknowledge receipt of this documentation and authorize payment</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <div class="field-line"><span class="field-label">Name:</span><input type="text" name="auth_fin_name" class="field-input" value="{{ fd.get('auth_fin_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 6) %}readonly{% endif %}></div>
+            <div class="field-line"><span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 6 %}
+                <div id="sigWidget_auth_fin_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('auth_fin_signature')" id="btnDraw_auth_fin_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('auth_fin_signature')" id="btnType_auth_fin_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_auth_fin_signature" style="display:block;">
+                    <canvas id="canvas_auth_fin_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('auth_fin_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_auth_fin_signature" style="display:none;">
+                    <input type="text" id="typeInput_auth_fin_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('auth_fin_signature')">
+                  </div>
+                  <input type="hidden" name="auth_fin_signature" id="sigData_auth_fin_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 6 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="auth_fin_signature" value="signed">
+{% else %}
+                <input type="text" name="auth_fin_signature" class="field-input" value="{{ fd.get('auth_fin_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line"><span class="field-label">Date:</span><input type="date" name="auth_fin_date" class="field-input" value="{{ fd.get('auth_fin_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 6) %}readonly{% endif %}></div>
+        </div>
+    </div>
+
+    <div style="text-align:right; font-size:11px; margin-top:10px; color:#888;">Page 1-3 of 3</div>
+</div>
+
+<!-- Action Buttons -->
+{% if mode == 'new' %}
+<div style="max-width:860px; margin:16px auto; display:flex; gap:12px; justify-content:flex-end;" class="no-print">
+    <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline">Cancel</a>
+    <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Submit this form?')">
+        <i class="fas fa-paper-plane"></i> Submit Form
+    </button>
+</div>
+
+{% elif mode == 'officer' %}
+{# Officer tokenised view — no login needed #}
+{% if error %}
+<div class="alert alert-danger no-print" style="max-width:860px;margin:12px auto;">{{ error }}</div>
+{% endif %}
+<div style="max-width:860px; margin:20px auto; padding:20px; background:#f0fff4; border:2px solid #27ae60; border-radius:10px;" class="no-print">
+    <h3 style="color:#1a7a3a; margin-bottom:6px;"><i class="fas fa-user-check"></i> Officer Action Required</h3>
+    <p style="color:#555; margin-bottom:16px;">
+        You are reviewing this form as <strong>{{ current_step_obj.step_name }}</strong>.
+        Please fill in your section above, then choose an action below.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button type="button" onclick="submitOfficerAction('approve')"
+                class="btn btn-success btn-lg">
+            <i class="fas fa-check"></i> Approve &amp; Sign
+        </button>
+        <button type="button" onclick="openRejectPanel()"
+                class="btn btn-danger">
+            <i class="fas fa-times"></i> Reject
+        </button>
+    </div>
+    <div id="rejectPanel" style="display:none; margin-top:16px;">
+        <label style="font-weight:600; display:block; margin-bottom:6px;">Reason for rejection (required):</label>
+        <textarea id="rejectReason" rows="4" class="form-control"
+                  style="width:100%; border:1px solid #e74c3c; border-radius:6px; padding:10px; font-size:13px;"
+                  placeholder="Please explain why you are rejecting this form..."></textarea>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+            <button type="button" onclick="submitOfficerAction('reject')" class="btn btn-danger">
+                <i class="fas fa-times-circle"></i> Confirm Rejection
+            </button>
+            <button type="button" onclick="closeRejectPanel()" class="btn btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+<input type="hidden" name="action" id="officerAction" value="">
+
+<script>
+function submitOfficerAction(action) {
+    if (action === 'reject') {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) { alert('Please enter a reason for rejection.'); return; }
+        document.getElementById('mainForm').querySelector('[name="comment"]') ?
+            document.getElementById('mainForm').querySelector('[name="comment"]').value = reason : null;
+        // add comment field dynamically
+        let c = document.getElementById('mainForm').querySelector('[name="comment"]');
+        if (!c) {
+            c = document.createElement('input');
+            c.type = 'hidden';
+            c.name = 'comment';
+            document.getElementById('mainForm').appendChild(c);
+        }
+        c.value = reason;
+    }
+    document.getElementById('officerAction').value = action;
+    if (action === 'approve' && !confirm('Confirm approval of this section?')) return;
+    document.getElementById('mainForm').submit();
+}
+function openRejectPanel()  { document.getElementById('rejectPanel').style.display = 'block'; }
+function closeRejectPanel() { document.getElementById('rejectPanel').style.display = 'none'; }
+</script>
+
+{% endif %}
+</form>
+{% endblock %}

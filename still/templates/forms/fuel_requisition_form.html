@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+{% block title %}Fuel Requisition{% endblock %}
+{% block content %}
+<div class="page-header no-print">
+    <div class="page-header-left">
+        <h1>Fuel Requisition</h1>
+        <p>{{ 'Review Mode' if mode == 'approve' else 'New Submission' }}</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <button onclick="printForm()" class="btn btn-outline btn-sm"><i class="fas fa-print"></i> Print</button>
+        <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+{% set is_new = (mode == 'new') %}
+{% set fd = form_data if form_data else {} %}
+{% set current_step = sub.current_step if sub else 0 %}
+
+<form method="POST" id="mainForm"
+    action="{% if mode == 'officer' %}{{ url_for('forms.officer_review', token=token) }}{% elif mode == 'approve' %}{{ url_for('forms.admin_approve', sub_id=sub.id) }}{% else %}{{ url_for('forms.new_form', form_type_id=form_type.id) }}{% endif %}">
+
+<div class="official-form">
+
+    <!-- HEADER -->
+    <div class="form-university-name">MZUZU UNIVERSITY</div>
+    <div class="form-title">FUEL REQUISITION</div>
+
+    <hr style="border:2px solid #1a3a5c; margin:10px 0 16px;">
+
+    <!-- SECTION A -->
+    <div class="form-section">
+        <div class="form-section-title">SECTION A: To be completed by Applicant/Driver 48hrs before departure</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div class="field-line">
+                <span class="field-label">Name</span>
+                <span style="font-size:13px;">:</span>
+                <input type="text" name="applicant_name" class="dotted-input"
+                    value="{{ fd.get('applicant_name', user.full_name if is_new else '') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Position</span>
+                <input type="text" name="applicant_position" class="dotted-input"
+                    value="{{ fd.get('applicant_position', user.post if is_new else '') }}"
+                    {% if not is_new %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Department/Section:</span>
+            <input type="text" name="applicant_department" class="dotted-input"
+                value="{{ fd.get('applicant_department', (user.department.name if user.department else '') if is_new else '') }}"
+                {% if not is_new %}readonly{% endif %}>
+        </div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Destination</span>
+            <span style="font-size:13px;">:</span>
+            <input type="text" name="destination" class="dotted-input"
+                value="{{ fd.get('destination','') }}" {% if not is_new %}readonly{% endif %}>
+        </div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label">Purpose of Trip</span>
+            <span style="font-size:13px;">:</span>
+            <input type="text" name="purpose_of_trip" class="dotted-input"
+                value="{{ fd.get('purpose_of_trip','') }}" {% if not is_new %}readonly{% endif %}>
+        </div>
+    </div>
+
+    <hr style="border:1px solid #1a3a5c; margin:4px 0 12px;">
+
+    <!-- SECTION B -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 1 %}approval-section active-step{% endif %}">
+        <div class="form-section-title">SECTION B: To be completed by the Transport Officer</div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span class="field-label" style="font-weight:700;">Vehicle No:</span>
+            <input type="text" name="vehicle_no" class="dotted-input" style="width:200px;"
+                value="{{ fd.get('vehicle_no','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div class="field-line">
+                <span class="field-label" style="font-weight:700;">Type of vehicle:</span>
+                <input type="text" name="vehicle_type" class="dotted-input"
+                    value="{{ fd.get('vehicle_type','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label" style="font-weight:700;">Engine Capacity:</span>
+                <input type="text" name="engine_capacity" class="dotted-input"
+                    value="{{ fd.get('engine_capacity','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <div style="font-size:13px; margin-bottom:10px; font-weight:600;">University vehicle or Private vehicle</div>
+
+        <div style="font-size:13px; margin-bottom:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="field-label">Type of fuel</span>
+            <span>:</span>
+            <span>&nbsp;Diesel</span>
+            <input type="checkbox" name="fuel_diesel" value="yes"
+                {% if fd.get('fuel_diesel') %}checked{% endif %}
+                {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}
+                style="width:16px;height:16px;">
+            <span>&nbsp;&nbsp;Petrol</span>
+            <input type="checkbox" name="fuel_petrol" value="yes"
+                {% if fd.get('fuel_petrol') %}checked{% endif %}
+                {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}
+                style="width:16px;height:16px;">
+            <span style="font-style:italic; color:#555;">&nbsp;(tick)</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div class="field-line">
+                <span class="field-label">Previous fuel allocated:</span>
+                <input type="text" name="prev_fuel_allocated" class="dotted-input"
+                    value="{{ fd.get('prev_fuel_allocated','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Date</span>
+                <input type="date" name="prev_fuel_date" class="dotted-input"
+                    value="{{ fd.get('prev_fuel_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div class="field-line">
+                <span class="field-label">Opening mileage:</span>
+                <input type="text" name="opening_mileage" class="dotted-input"
+                    value="{{ fd.get('opening_mileage','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Closing mileage:</span>
+                <input type="text" name="closing_mileage" class="dotted-input"
+                    value="{{ fd.get('closing_mileage','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Distance covered:</span>
+                <input type="text" name="distance_covered" class="dotted-input"
+                    value="{{ fd.get('distance_covered','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+        </div>
+
+        <!-- Amount + Lubricants side by side -->
+        <div style="display:grid; grid-template-columns:1fr auto; gap:16px; margin-bottom:10px; align-items:start;">
+            <div>
+                <div class="field-line" style="margin-bottom:8px;">
+                    <span class="field-label">Amount of fuel required now</span>
+                    <input type="text" name="fuel_amount_required" class="dotted-input" style="width:100px;"
+                        value="{{ fd.get('fuel_amount_required','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+                </div>
+                <div class="field-line" style="margin-bottom:8px;">
+                    <span class="field-label">Cost per litre</span>
+                    <input type="text" name="cost_per_litre" class="dotted-input" style="width:100px;"
+                        value="{{ fd.get('cost_per_litre','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+                    <span class="field-label" style="margin-left:12px;">Total cost for fuel</span>
+                    <input type="text" name="total_fuel_cost" class="dotted-input" style="width:120px;"
+                        value="{{ fd.get('total_fuel_cost','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+                </div>
+            </div>
+            <div style="border:1px solid #aaa; padding:10px 14px; font-size:13px; min-width:200px;">
+                <div style="font-weight:700; margin-bottom:8px;">Other lubricants required:</div>
+                <div class="form-checkbox-row" style="margin-bottom:6px;">
+                    <span>Engine oil</span>
+                    <input type="checkbox" name="lub_engine_oil" value="yes"
+                        {% if fd.get('lub_engine_oil') %}checked{% endif %}
+                        {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}
+                        style="width:16px;height:16px;">
+                </div>
+                <div class="form-checkbox-row" style="margin-bottom:6px;">
+                    <span>Transmission oil</span>
+                    <input type="checkbox" name="lub_transmission_oil" value="yes"
+                        {% if fd.get('lub_transmission_oil') %}checked{% endif %}
+                        {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}
+                        style="width:16px;height:16px;">
+                </div>
+                <div class="form-checkbox-row">
+                    <span>Brake fluid</span>
+                    <input type="checkbox" name="lub_brake_fluid" value="yes"
+                        {% if fd.get('lub_brake_fluid') %}checked{% endif %}
+                        {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}disabled{% endif %}
+                        style="width:16px;height:16px;">
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px;">
+            <div class="field-line">
+                <span class="field-label">Name</span>
+                <input type="text" name="transport_officer_name" class="dotted-input"
+                    value="{{ fd.get('transport_officer_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Signature</span>
+                {% if mode == 'officer' and current_step == 1 %}
+                <div id="sigWidget_transport_officer_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('transport_officer_signature')" id="btnDraw_transport_officer_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('transport_officer_signature')" id="btnType_transport_officer_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_transport_officer_signature" style="display:block;">
+                    <canvas id="canvas_transport_officer_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('transport_officer_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_transport_officer_signature" style="display:none;">
+                    <input type="text" id="typeInput_transport_officer_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('transport_officer_signature')">
+                  </div>
+                  <input type="hidden" name="transport_officer_signature" id="sigData_transport_officer_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 1 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="transport_officer_signature" value="signed">
+{% else %}
+                <input type="text" name="transport_officer_signature" class="dotted-input" value="{{ fd.get('transport_officer_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line">
+                <span class="field-label">Post</span>
+                <input type="text" name="transport_officer_post" class="dotted-input"
+                    value="{{ fd.get('transport_officer_post','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 1) %}readonly{% endif %}>
+            </div>
+        </div>
+        <div style="font-size:11px; color:#555; font-style:italic; margin-top:2px; text-align:right;">(Transport Officer)</div>
+    </div>
+
+    <hr style="border:1px solid #1a3a5c; margin:4px 0 12px;">
+
+    <!-- SECTION C -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 2 %}approval-section active-step{% endif %}">
+        <div class="form-section-title">SECTION C: To be completed by Head of Department</div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span style="font-size:13px;">I approve/do not approve the supply of fuel</span>
+            <input type="text" name="hod_fuel_approval" class="dotted-input"
+                value="{{ fd.get('hod_fuel_approval','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 0.7fr; gap:8px;">
+            <div class="field-line">
+                <span class="field-label">Name:</span>
+                <input type="text" name="hod_name" class="dotted-input"
+                    value="{{ fd.get('hod_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 2 %}
+                <div id="sigWidget_hod_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('hod_signature')" id="btnDraw_hod_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('hod_signature')" id="btnType_hod_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_hod_signature" style="display:block;">
+                    <canvas id="canvas_hod_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('hod_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_hod_signature" style="display:none;">
+                    <input type="text" id="typeInput_hod_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('hod_signature')">
+                  </div>
+                  <input type="hidden" name="hod_signature" id="sigData_hod_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 2 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="hod_signature" value="signed">
+{% else %}
+                <input type="text" name="hod_signature" class="dotted-input" value="{{ fd.get('hod_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line">
+                <span class="field-label">Position</span>
+                <input type="text" name="hod_position" class="dotted-input"
+                    value="{{ fd.get('hod_position','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Date</span>
+                <input type="date" name="hod_date" class="dotted-input"
+                    value="{{ fd.get('hod_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 2) %}readonly{% endif %}>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border:1px solid #1a3a5c; margin:4px 0 12px;">
+
+    <!-- SECTION D -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 3 %}approval-section active-step{% endif %}">
+        <div class="form-section-title">SECTION D: To be completed by University Registrar</div>
+
+        <div class="field-line" style="margin-bottom:10px;">
+            <span style="font-size:13px;">I approve/do not approve the supply of fuel</span>
+            <input type="text" name="registrar_fuel_approval" class="dotted-input"
+                value="{{ fd.get('registrar_fuel_approval','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 0.7fr; gap:8px;">
+            <div class="field-line">
+                <span class="field-label">Name :</span>
+                <input type="text" name="registrar_name" class="dotted-input"
+                    value="{{ fd.get('registrar_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 3 %}
+                <div id="sigWidget_registrar_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('registrar_signature')" id="btnDraw_registrar_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('registrar_signature')" id="btnType_registrar_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_registrar_signature" style="display:block;">
+                    <canvas id="canvas_registrar_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('registrar_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_registrar_signature" style="display:none;">
+                    <input type="text" id="typeInput_registrar_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('registrar_signature')">
+                  </div>
+                  <input type="hidden" name="registrar_signature" id="sigData_registrar_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 3 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="registrar_signature" value="signed">
+{% else %}
+                <input type="text" name="registrar_signature" class="dotted-input" value="{{ fd.get('registrar_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line">
+                <span class="field-label">Position</span>
+                <input type="text" name="registrar_position" class="dotted-input"
+                    value="{{ fd.get('registrar_position','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Date</span>
+                <input type="date" name="registrar_date" class="dotted-input"
+                    value="{{ fd.get('registrar_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 3) %}readonly{% endif %}>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border:1px solid #1a3a5c; margin:4px 0 12px;">
+
+    <!-- SECTION E -->
+    <div class="form-section {% if (mode == 'approve' or mode == 'officer') and current_step == 4 %}approval-section active-step{% endif %}">
+        <div class="form-section-title">SECTION E: To be completed by Director of Finance</div>
+
+        <div style="font-size:13px; margin-bottom:10px; font-style:italic;">
+            I authorize the supply of fuel as approved in D
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 0.7fr; gap:8px;">
+            <div class="field-line">
+                <span class="field-label">Name :</span>
+                <input type="text" name="dof_name" class="dotted-input"
+                    value="{{ fd.get('dof_name','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Signature:</span>
+                {% if mode == 'officer' and current_step == 4 %}
+                <div id="sigWidget_dof_signature" style="flex:1;">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button type="button" onclick="showDraw('dof_signature')" id="btnDraw_dof_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #7c6fff;background:#7c6fff;color:#fff;font-size:12px;cursor:pointer;">&#9999; Draw</button>
+                    <button type="button" onclick="showType('dof_signature')" id="btnType_dof_signature"
+                      style="padding:4px 10px;border-radius:5px;border:1px solid #555;background:#fff;color:#333;font-size:12px;cursor:pointer;">&#9000; Type name</button>
+                  </div>
+                  <div id="drawArea_dof_signature" style="display:block;">
+                    <canvas id="canvas_dof_signature" width="260" height="60"
+                      style="border:1px solid #aaa;border-radius:4px;cursor:crosshair;background:#fff;touch-action:none;"></canvas>
+                    <br><button type="button" onclick="clearCanvas('dof_signature')"
+                      style="font-size:11px;margin-top:3px;border:none;background:none;color:#e74c3c;cursor:pointer;">Clear</button>
+                  </div>
+                  <div id="typeArea_dof_signature" style="display:none;">
+                    <input type="text" id="typeInput_dof_signature" placeholder="Type your full name"
+                      style="width:260px;padding:8px;border:1px solid #aaa;border-radius:4px;font-style:italic;font-size:16px;"
+                      oninput="typeToSig('dof_signature')">
+                  </div>
+                  <input type="hidden" name="dof_signature" id="sigData_dof_signature" value="">
+                </div>
+{% elif (mode == 'approve' or mode == 'officer') and current_step == 4 and user.signature_path %}
+                <img src="{{ url_for('static', filename=user.signature_path) }}" style="max-height:28px; border-bottom:1px solid #333; flex:1;">
+                <input type="hidden" name="dof_signature" value="signed">
+{% else %}
+                <input type="text" name="dof_signature" class="dotted-input" value="{{ fd.get('dof_signature','') }}" readonly>
+{% endif %}
+            </div>
+            <div class="field-line">
+                <span class="field-label">Position</span>
+                <input type="text" name="dof_position" class="dotted-input"
+                    value="{{ fd.get('dof_position','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}>
+            </div>
+            <div class="field-line">
+                <span class="field-label">Date</span>
+                <input type="date" name="dof_date" class="dotted-input"
+                    value="{{ fd.get('dof_date','') }}" {% if not ((mode == 'approve' or mode == 'officer') and current_step == 4) %}readonly{% endif %}>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border:1px solid #1a3a5c; margin:10px 0;">
+
+    <!-- NOTE at bottom -->
+    <div style="font-size:13px; margin-top:10px;">
+        <span style="font-weight:700;">NOTE:</span> The form must be endorsed by Head of Department in Section C.
+    </div>
+
+    <div style="text-align:right; font-size:11px; margin-top:10px; color:#888;">Page 1 of 1</div>
+</div>
+
+<!-- Action Buttons -->
+{% if mode == 'new' %}
+<div style="max-width:860px; margin:16px auto; display:flex; gap:12px; justify-content:flex-end;" class="no-print">
+    <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline">Cancel</a>
+    <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Submit this form?')">
+        <i class="fas fa-paper-plane"></i> Submit Form
+    </button>
+</div>
+
+{% elif mode == 'officer' %}
+{# Officer tokenised view — no login needed #}
+{% if error %}
+<div class="alert alert-danger no-print" style="max-width:860px;margin:12px auto;">{{ error }}</div>
+{% endif %}
+<div style="max-width:860px; margin:20px auto; padding:20px; background:#f0fff4; border:2px solid #27ae60; border-radius:10px;" class="no-print">
+    <h3 style="color:#1a7a3a; margin-bottom:6px;"><i class="fas fa-user-check"></i> Officer Action Required</h3>
+    <p style="color:#555; margin-bottom:16px;">
+        You are reviewing this form as <strong>{{ current_step_obj.step_name }}</strong>.
+        Please fill in your section above, then choose an action below.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button type="button" onclick="submitOfficerAction('approve')"
+                class="btn btn-success btn-lg">
+            <i class="fas fa-check"></i> Approve &amp; Sign
+        </button>
+        <button type="button" onclick="openRejectPanel()"
+                class="btn btn-danger">
+            <i class="fas fa-times"></i> Reject
+        </button>
+    </div>
+    <div id="rejectPanel" style="display:none; margin-top:16px;">
+        <label style="font-weight:600; display:block; margin-bottom:6px;">Reason for rejection (required):</label>
+        <textarea id="rejectReason" rows="4" class="form-control"
+                  style="width:100%; border:1px solid #e74c3c; border-radius:6px; padding:10px; font-size:13px;"
+                  placeholder="Please explain why you are rejecting this form..."></textarea>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+            <button type="button" onclick="submitOfficerAction('reject')" class="btn btn-danger">
+                <i class="fas fa-times-circle"></i> Confirm Rejection
+            </button>
+            <button type="button" onclick="closeRejectPanel()" class="btn btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+<input type="hidden" name="action" id="officerAction" value="">
+
+<script>
+function submitOfficerAction(action) {
+    if (action === 'reject') {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) { alert('Please enter a reason for rejection.'); return; }
+        document.getElementById('mainForm').querySelector('[name="comment"]') ?
+            document.getElementById('mainForm').querySelector('[name="comment"]').value = reason : null;
+        // add comment field dynamically
+        let c = document.getElementById('mainForm').querySelector('[name="comment"]');
+        if (!c) {
+            c = document.createElement('input');
+            c.type = 'hidden';
+            c.name = 'comment';
+            document.getElementById('mainForm').appendChild(c);
+        }
+        c.value = reason;
+    }
+    document.getElementById('officerAction').value = action;
+    if (action === 'approve' && !confirm('Confirm approval of this section?')) return;
+    document.getElementById('mainForm').submit();
+}
+function openRejectPanel()  { document.getElementById('rejectPanel').style.display = 'block'; }
+function closeRejectPanel() { document.getElementById('rejectPanel').style.display = 'none'; }
+</script>
+
+{% endif %}
+</form>
+{% endblock %}

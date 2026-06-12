@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}{{ sub.tracking_number }} — Mzuzu University DTS{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1><i class="fas fa-file-alt"></i> {{ sub.form_type.name }}</h1>
+        <p>Tracking: <code>{{ sub.tracking_number }}</code> &nbsp;|&nbsp; Submitted: {{ sub.submitted_at.strftime('%d %b %Y %H:%M') }}</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button onclick="printForm()" class="btn btn-outline btn-sm no-print"><i class="fas fa-print"></i> Print</button>
+        {% if sub.status == 'pending' and (sub.submitted_by == current_user.id or (current_user.role and current_user.role.name == 'System Administrator')) %}
+        <form method="POST" action="{{ url_for('forms.resend_officer_link', sub_id=sub.id) }}"
+              class="no-print"
+              onsubmit="return confirm('Send a fresh review link to the current officer?')">
+            <button type="submit" class="btn btn-outline btn-sm" style="border-color:#f57c00;color:#f57c00;">
+                <i class="fas fa-paper-plane"></i> Resend Officer Link
+            </button>
+        </form>
+        {% endif %}
+        {% if current_user.role and current_user.role.name == 'System Administrator' and sub.status == 'pending' %}
+        <button onclick="openRejectModal({{ sub.id }})" class="btn btn-danger btn-sm no-print">
+            <i class="fas fa-times"></i> Reject
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:20px;">
+    <!-- Status Card -->
+    <div class="card">
+        <div class="card-header"><i class="fas fa-info-circle"></i><h3>Form Status</h3></div>
+        <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">Status</span>
+                    <span class="badge badge-{{ sub.status }}">{{ sub.status|upper }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">Submitted By</span>
+                    <span>{{ sub.submitter.full_name }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">Department</span>
+                    <span>{{ sub.submitter.department.name if sub.submitter.department else 'N/A' }}</span>
+                </div>
+                {% if sub.current_department %}
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">Currently At</span>
+                    <span>{{ sub.current_department.name }}</span>
+                </div>
+                {% endif %}
+                {% if sub.completed_at %}
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">Completed</span>
+                    <span>{{ sub.completed_at.strftime('%d %b %Y %H:%M') if sub.completed_at else '' }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Progress -->
+    <div class="card">
+        <div class="card-header"><i class="fas fa-route"></i><h3>Workflow Progress</h3></div>
+        <div class="card-body">
+            {% for step in all_steps %}
+            {% set approved_step = approvals | selectattr('step_number','eq',step.step_order) | first %}
+            {% set rejected_step = rejections | selectattr('step_number','eq',step.step_order) | first %}
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <div style="width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
+                    {% if approved_step %}background:var(--success);color:white;
+                    {% elif rejected_step %}background:var(--danger);color:white;
+                    {% elif sub.current_step == step.step_order and sub.status == 'pending' %}background:var(--warning);color:white;
+                    {% else %}background:var(--border);color:var(--text-muted);{% endif %}">
+                    {% if approved_step %}✓{% elif rejected_step %}✗{% else %}{{ step.step_order }}{% endif %}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:12px; font-weight:600;">{{ step.step_name }}</div>
+                    {% if approved_step %}
+                    <div style="font-size:11px; color:var(--text-muted);">{{ approved_step.officer_name or (approved_step.officer.full_name if approved_step.officer else "Officer") }} — {{ approved_step.approved_at.strftime('%d %b %Y') if approved_step.approved_at else 'N/A' }}</div>
+                    {% elif rejected_step %}
+                    <div style="font-size:11px; color:var(--danger);">Rejected by {{ rejected_step.officer_name or (rejected_step.officer.full_name if rejected_step.officer else "Unknown") }}</div>
+                    {% elif sub.current_step == step.step_order and sub.status == 'pending' %}
+                    <div style="font-size:11px; color:var(--warning);">Awaiting action</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Details -->
+{% if sub.status == 'rejected' %}
+{% set rej = rejections[-1] if rejections else None %}
+{% if rej %}
+<div class="card" style="margin-bottom:20px; border-left:4px solid var(--danger);">
+    <div class="card-header" style="background:var(--danger);"><i class="fas fa-times-circle"></i><h3>Rejection Details</h3></div>
+    <div class="card-body">
+        <p><strong>Rejected By:</strong> {{ rej.officer_name or (rej.officer.full_name if rej.officer else "Unknown") }}</p>
+        <p><strong>Stage:</strong> {{ rej.step_name }}</p>
+        <p><strong>Date:</strong> {{ rej.rejected_at.strftime('%d %b %Y %H:%M') if rej.rejected_at else 'N/A' }}</p>
+        <p><strong>Reason:</strong></p>
+        <div style="background:#ffebee; padding:12px; border-radius:6px; margin-top:6px; font-size:13px;">{{ rej.reason }}</div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Approval Timeline -->
+{% if approvals %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><i class="fas fa-history"></i><h3>Approval History</h3></div>
+    <div class="card-body">
+        <div class="timeline">
+        {% for appr in approvals %}
+        <div class="timeline-item">
+            <div class="timeline-dot approved"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">{{ appr.step_name }}</div>
+                <div class="timeline-meta">
+                    Approved by <strong>{{ appr.officer_name or (appr.officer.full_name if appr.officer else 'Unknown') }}</strong>
+                    on {{ appr.approved_at.strftime('%d %b %Y at %H:%M') if appr.approved_at else 'N/A' }}
+                    {% if appr.ip_address %}<span style="color:#aaa;font-size:11px;"> · IP: {{ appr.ip_address }}</span>{% endif %}
+                </div>
+                {% if appr.comment %}
+                <div style="margin-top:6px; font-size:12px; color:var(--text-muted);">Comment: {{ appr.comment }}</div>
+                {% endif %}
+                {% if appr.signature_path %}
+                <div style="margin-top:8px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Digital Signature:</div>
+                    <img src="{{ url_for('static', filename=appr.signature_path) }}" class="signature-img" alt="Signature">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <h3 class="modal-title" style="color:var(--danger);"><i class="fas fa-times-circle"></i> Reject Form</h3>
+        <form method="POST" action="{{ url_for('forms.reject_form', sub_id=sub.id) }}">
+            <div class="form-group">
+                <label class="form-label required">Reason for Rejection</label>
+                <textarea name="rejection_reason" class="form-control" rows="4" required placeholder="Provide a clear reason..."></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

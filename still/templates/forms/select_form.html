@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Select Form — Mzuzu University DTS{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Submit a New Form</h1>
+        <p>Select the type of form you wish to submit</p>
+    </div>
+</div>
+<div class="form-select-grid">
+    {% set icons = ['✈️', '🛒', '🚌', '⛽'] %}
+    {% for ft in form_types %}
+    <a href="{{ url_for('forms.new_form', form_type_id=ft.id) }}" class="form-card">
+        <div class="form-card-icon">{{ icons[loop.index0 % 4] }}</div>
+        <div class="form-card-ref">Ref: {{ ft.ref_number }}</div>
+        <div class="form-card-title">{{ ft.name }}</div>
+        <div class="form-card-desc">{{ ft.description }}</div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

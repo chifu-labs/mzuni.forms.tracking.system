@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mzuzu University – Form Action</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+<div class="card" style="text-align:center;">
+    <span class="brand">● Mzuzu University</span>
+    <h1 style="font-size:1.3rem; margin:16px 0 10px;">Document Tracking System</h1>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+                padding:24px;margin-top:20px;color:var(--text);font-size:1rem;line-height:1.6;">
+        {{ message }}
+    </div>
+    <p style="margin-top:24px;font-size:0.85rem;color:var(--text-muted);">
+        You may close this window. This is an automated message — please do not reply.
+    </p>
+</div>
+</body>
+</html>

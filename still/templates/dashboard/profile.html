@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1>My Profile</h1><p>Manage your account details and signature</p></div>
+</div>
+<div class="grid-2">
+<div class="card">
+    <div class="card-header"><i class="fas fa-user"></i><h2>Account Information</h2></div>
+    <div class="card-body">
+        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+            {% for label, val in [
+                ('Employee ID', current_user.employee_id),
+                ('Full Name', current_user.full_name),
+                ('Email', current_user.email),
+                ('Post', current_user.post or 'N/A'),
+                ('Grade', current_user.grade or 'N/A'),
+                ('Role', current_user.role.name if current_user.role else 'N/A'),
+                ('Department', current_user.department.name if current_user.department else 'N/A'),
+            ] %}
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:10px 0; color:var(--text-muted); width:130px;">{{ label }}</td>
+                <td style="padding:10px 0; font-weight:600;">{{ val }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline" style="margin-top:16px;">
+            <i class="fas fa-key"></i> Change Password
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="fas fa-signature"></i><h2>Digital Signature</h2></div>
+    <div class="card-body">
+        {% if current_user.signature_path %}
+        <p style="font-size:13px; color:var(--success); margin-bottom:10px;"><i class="fas fa-check-circle"></i> Signature on file</p>
+        <div style="border:2px solid var(--border); border-radius:8px; padding:10px; background:#f9f9f9; margin-bottom:16px;">
+            <img src="{{ url_for('static', filename=current_user.signature_path) }}" style="max-height:80px; max-width:100%;" alt="Your Signature">
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">You can update your signature below.</p>
+        {% else %}
+        <p style="font-size:13px; color:var(--warning); margin-bottom:12px;"><i class="fas fa-exclamation-triangle"></i> No signature on file. Please upload or draw your signature.</p>
+        {% endif %}
+
+        <div style="margin-bottom:10px;">
+            <label style="font-size:13px; font-weight:600; display:block; margin-bottom:8px;">Draw your signature:</label>
+            <canvas id="sigCanvas" width="400" height="120" style="border:2px solid var(--primary); border-radius:8px; width:100%; cursor:crosshair; background:white;"></canvas>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="clearSignature('sigCanvas')"><i class="fas fa-eraser"></i> Clear</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitDrawnSig()"><i class="fas fa-save"></i> Save Drawn Signature</button>
+            </div>
+        </div>
+
+        <hr style="margin:16px 0;">
+        <label style="font-size:13px; font-weight:600; display:block; margin-bottom:8px;">Or upload a signature image (PNG):</label>
+        <form method="POST" action="{{ url_for('auth.upload_signature') }}" enctype="multipart/form-data" id="sigUploadForm">
+            <input type="hidden" name="signature_data" id="sigDataInput">
+            <input type="file" name="sig_file" id="sigFileInput" accept="image/png,image/jpeg" class="form-control form-control-sm" style="margin-bottom:8px;" onchange="previewUpload(this)">
+            <div id="uploadPreview" style="display:none; margin-bottom:8px;">
+                <img id="previewImg" style="max-height:80px; border:1px solid var(--border); border-radius:4px;">
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="submitUploadedSig()"><i class="fas fa-upload"></i> Upload Signature</button>
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() { initSignatureCanvas('sigCanvas'); });
+
+function submitDrawnSig() {
+    const data = saveSignature('sigCanvas', 'sigDataInput');
+    if (!data || data === 'data:,') { alert('Please draw your signature first.'); return; }
+    document.getElementById('sigDataInput').value = data;
+    document.getElementById('sigUploadForm').submit();
+}
+
+function previewUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('uploadPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function submitUploadedSig() {
+    const fileInput = document.getElementById('sigFileInput');
+    if (!fileInput.files || !fileInput.files[0]) { alert('Please select an image file.'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('sigDataInput').value = e.target.result;
+        document.getElementById('sigUploadForm').submit();
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+}
+</script>
+{% endblock %}

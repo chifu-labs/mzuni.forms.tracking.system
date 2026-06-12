@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login – Mzuzu University Form Tracking System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+<div class="card">
+    <div class="card-header">
+        <span class="brand">● Mzuzu University</span>
+        <h1>Form Tracking System</h1>
+        <p>Sign in to continue to your account</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="form-group">
+            <label class="field-label" for="employee_id">Employee ID</label>
+            <input type="text" id="employee_id" name="employee_id"
+                   placeholder="e.g. EMP001" required autofocus>
+        </div>
+
+        <div class="form-group">
+            <label class="field-label" for="password">Password</label>
+            <div class="input-wrap">
+                <input type="password" id="password" name="password"
+                       placeholder="••••••••" required>
+                <button type="button" class="toggle-pw"
+                        onclick="togglePassword('password', this)">
+                    <svg class="eye-icon" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <label class="remember-row">
+            <input type="checkbox" name="remember">
+            <span>Remember me for 7 days</span>
+        </label>
+
+        <button type="submit">Sign in</button>
+    </form>
+
+    <div class="card-footer" style="margin-top:14px;">
+        <a href="{{ url_for('auth.forgot_password') }}"
+           style="color:var(--accent); font-size:0.85rem;">Forgot password?</a>
+    </div>
+
+    <div class="card-footer">
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Create one</a>
+    </div>
+</div>
+
+<script>
+function togglePassword(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.querySelector('.eye-icon').style.opacity = isHidden ? '1' : '0.4';
+}
+</script>
+
+</body>
+</html>

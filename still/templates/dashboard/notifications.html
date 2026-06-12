@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1><i class="fas fa-bell"></i> Notifications</h1><p>{{ notifications|length }} notification(s)</p></div>
+</div>
+<div class="card">
+<div class="card-body" style="padding:0;">
+{% if notifications %}
+{% for n in notifications %}
+<div style="padding:14px 20px; border-bottom:1px solid var(--border); display:flex; gap:14px; align-items:flex-start; {% if not n.is_read %}background:#f0f7ff;{% endif %}">
+    <div style="width:36px;height:36px;border-radius:50%;background:{% if not n.is_read %}var(--primary){% else %}var(--border){% endif %};display:flex;align-items:center;justify-content:center;color:white;font-size:14px;flex-shrink:0;">
+        <i class="fas fa-bell"></i>
+    </div>
+    <div style="flex:1;">
+        <p style="font-size:13px; margin-bottom:4px;">{{ n.message }}</p>
+        <p style="font-size:11px; color:var(--text-muted);">{{ n.created_at.strftime('%d %b %Y at %H:%M') }}</p>
+        {% if n.submission %}
+        <a href="{{ url_for('dashboard.view_submission', sub_id=n.submission_id) }}" class="btn btn-outline btn-sm" style="margin-top:6px;">
+            <i class="fas fa-eye"></i> View Form
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div style="padding:40px; text-align:center; color:var(--text-muted);">
+    <i class="fas fa-bell" style="font-size:36px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+    <p>No notifications yet.</p>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}

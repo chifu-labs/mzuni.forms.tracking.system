@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1><i class="fas fa-users"></i> Manage Users</h1><p>{{ users|length }} registered users</p></div>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Add User</a>
+</div>
+<div class="card">
+<div class="card-body" style="padding:0; overflow-x:auto;">
+<table class="data-table">
+    <thead><tr><th>Employee ID</th><th>Full Name</th><th>Email</th><th>Post</th><th>Role</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+        <td><code>{{ u.employee_id }}</code></td>
+        <td>{{ u.full_name }}</td>
+        <td style="font-size:12px;">{{ u.email }}</td>
+        <td style="font-size:12px;">{{ u.post or 'N/A' }}</td>
+        <td><span class="badge badge-info" style="font-size:10px;">{{ u.role.name if u.role else 'N/A' }}</span></td>
+        <td style="font-size:12px;">{{ u.department.name if u.department else 'N/A' }}</td>
+        <td>{% if u.is_active %}<span class="badge badge-approved">Active</span>{% else %}<span class="badge badge-rejected">Inactive</span>{% endif %}</td>
+        <td>
+            <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i></a>
+            <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.id) }}" style="display:inline; margin-left:4px;">
+                <button type="submit" class="btn btn-sm {% if u.is_active %}btn-warning{% else %}btn-success{% endif %}" onclick="return confirm('Confirm?')">
+                    <i class="fas {% if u.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Manage Officers — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1><i class="fas fa-user-tie"></i> Officer Management</h1>
+        <p>Update officer names and emails for each form section without editing code.</p>
+    </div>
+    <a href="{{ url_for('admin.admin_home') }}" class="btn btn-outline btn-sm">
+        <i class="fas fa-arrow-left"></i> Back to Admin
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for cat, msg in messages %}
+<div class="alert alert-{{ cat }}" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;
+    background:{% if cat=='success' %}#e8f5e9{% else %}#ffebee{% endif %};
+    color:{% if cat=='success' %}#2e7d32{% else %}#c62828{% endif %};border:1px solid currentColor;">
+    {{ msg }}
+</div>
+{% endfor %}
+{% endwith %}
+
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:14px;">
+    <strong>ℹ️ How this works:</strong> Changes here are saved to the database and take effect immediately.
+    Database entries override the default officer list in code. Use "Reset to Default" to revert any slot.
+    All changes are recorded in the audit log.
+</div>
+
+{% set current_form = namespace(name='') %}
+{% for slot in slots %}
+
+{% if slot.form_template != current_form.name %}
+{% set current_form.name = slot.form_template %}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-header" style="background:#1a3a5c;color:#fff;">
+        <i class="fas fa-file-alt"></i>
+        <h3>
+            {% if slot.form_template == 'procurement' %}REQUEST FOR USE OF FUNDS FOR PROCUREMENT
+            {% elif slot.form_template == 'travel_subsistence' %}TRAVEL AND SUBSISTENCE FORM
+            {% elif slot.form_template == 'fuel_requisition' %}FUEL REQUISITION
+            {% elif slot.form_template == 'transport_booking' %}STAFF BOOKING TRANSPORT FORM
+            {% else %}{{ slot.form_template }}{% endif %}
+        </h3>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead>
+                <tr style="background:#f5f5f5;border-bottom:2px solid #e0e0e0;">
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:#444;">Section / Role</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:#444;">Current Officer</th>
+                    <th style="padding:12px 16px;text-align:left;font-weight:600;color:#444;">Status</th>
+                    <th style="padding:12px 16px;text-align:center;font-weight:600;color:#444;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+{% endif %}
+
+            <tr style="border-bottom:1px solid #eee;" id="row-{{ slot.form_template }}-{{ slot.section_key }}">
+                <td style="padding:12px 16px;color:#333;">
+                    <div style="font-weight:600;">{{ slot.label }}</div>
+                </td>
+                <td style="padding:12px 16px;">
+                    {% if slot.db %}
+                    <div style="font-weight:600;color:#1a3a5c;">{{ slot.db.officer_name }}</div>
+                    <div style="font-size:12px;color:#888;">{{ slot.db.officer_email }}</div>
+                    {% else %}
+                    <div style="font-weight:600;color:#555;">{{ slot.default_name }}</div>
+                    <div style="font-size:12px;color:#888;">{{ slot.default_email }}</div>
+                    {% endif %}
+                </td>
+                <td style="padding:12px 16px;">
+                    {% if slot.db %}
+                    <span style="background:#e3f2fd;color:#1565c0;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">
+                        DB Override
+                    </span>
+                    {% else %}
+                    <span style="background:#f3f3f3;color:#777;padding:3px 10px;border-radius:20px;font-size:12px;">
+                        Default
+                    </span>
+                    {% endif %}
+                </td>
+                <td style="padding:12px 16px;text-align:center;">
+                    <button
+                        onclick="openEditModal('{{ slot.form_template }}','{{ slot.section_key }}','{{ (slot.db.officer_name if slot.db else slot.default_name)|replace("'","\\'") }}','{{ (slot.db.officer_email if slot.db else slot.default_email)|replace("'","\\'") }}','{{ (slot.db.officer_role if slot.db else slot.default_role)|replace("'","\\'") }}')"
+                        class="btn btn-outline btn-sm" style="margin-right:6px;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    {% if slot.db %}
+                    <form method="POST" action="{{ url_for('admin.reset_officer') }}" style="display:inline;"
+                          onsubmit="return confirm('Reset to default officer?')">
+                        <input type="hidden" name="form_template" value="{{ slot.form_template }}">
+                        <input type="hidden" name="section_key" value="{{ slot.section_key }}">
+                        <button type="submit" class="btn btn-sm" style="background:#ff7043;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+
+{% if loop.last or slots[loop.index].form_template != slot.form_template %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+<!-- Edit Modal -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+        <h3 style="margin:0 0 6px;color:#1a3a5c;"><i class="fas fa-user-edit"></i> Edit Officer</h3>
+        <p id="modal-section-label" style="color:#888;font-size:13px;margin-bottom:20px;"></p>
+        <form method="POST" action="{{ url_for('admin.save_officer') }}">
+            <input type="hidden" name="form_template" id="modal_form_template">
+            <input type="hidden" name="section_key" id="modal_section_key">
+
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px;">Full Name <span style="color:#e53935;">*</span></label>
+                <input type="text" name="officer_name" id="modal_name" class="form-control" required>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px;">Email Address <span style="color:#e53935;">*</span></label>
+                <input type="email" name="officer_email" id="modal_email" class="form-control" required>
+            </div>
+            <div style="margin-bottom:22px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px;">Job Title / Role</label>
+                <input type="text" name="officer_role" id="modal_role" class="form-control">
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" class="btn" style="background:#1a3a5c;color:#fff;padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(formTemplate, sectionKey, name, email, role) {
+    document.getElementById('modal_form_template').value = formTemplate;
+    document.getElementById('modal_section_key').value = sectionKey;
+    document.getElementById('modal_name').value = name;
+    document.getElementById('modal_email').value = email;
+    document.getElementById('modal_role').value = role;
+    document.getElementById('modal-section-label').textContent = formTemplate + ' / ' + sectionKey;
+    document.getElementById('editModal').style.display = 'flex';
+}
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

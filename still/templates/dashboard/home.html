@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Mzuzu University DTS{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Welcome, {{ current_user.full_name.split()[0] }}</h1>
+        <p>{{ current_user.role.name }} — {{ current_user.department.name if current_user.department else 'No Department' }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('forms.select_form') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Form
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon">📄</span>
+        <span class="stat-value">{{ my_submissions|length }}</span>
+        <span class="stat-label">My Submissions</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">⏳</span>
+        <span class="stat-value">{{ my_submissions|selectattr('status','eq','pending')|list|length }}</span>
+        <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <span class="stat-value">{{ my_submissions|selectattr('status','eq','approved')|list|length }}</span>
+        <span class="stat-label">Approved</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">❌</span>
+        <span class="stat-value">{{ my_submissions|selectattr('status','eq','rejected')|list|length }}</span>
+        <span class="stat-label">Rejected</span>
+    </div>
+    {% if dept_queue %}
+    <div class="stat-card" style="border-left:4px solid var(--accent);">
+        <span class="stat-icon">📥</span>
+        <span class="stat-value" style="color:var(--accent);">{{ dept_queue|length }}</span>
+        <span class="stat-label">Awaiting My Action</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Dept Queue -->
+{% if dept_queue %}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-header" style="background:var(--accent);">
+        <i class="fas fa-inbox"></i>
+        <h2>Forms Awaiting Your Action ({{ dept_queue|length }})</h2>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tracking Number</th>
+                    <th>Form Type</th>
+                    <th>Submitted By</th>
+                    <th>Submitted</th>
+                    <th>Stage</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for sub in dept_queue %}
+            {% set step = sub.form_type.workflow_steps | selectattr('step_order','eq',sub.current_step) | first %}
+            <tr>
+                <td><code style="font-size:11px;">{{ sub.tracking_number }}</code></td>
+                <td style="font-size:12px;">{{ sub.form_type.name }}</td>
+                <td>{{ sub.submitter.full_name }}</td>
+                <td style="font-size:12px;">{{ sub.submitted_at.strftime('%d %b %Y') }}</td>
+                <td><span class="badge badge-pending">{{ step.step_name if step else 'Step '~sub.current_step }}</span></td>
+                <td>
+                    <a href="{{ url_for('dashboard.view_submission', sub_id=sub.id) }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- My Submissions -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-file-alt"></i>
+        <h2>My Submissions</h2>
+    </div>
+    <div class="card-body" style="padding:0;">
+        {% if my_submissions %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tracking Number</th>
+                    <th>Form Type</th>
+                    <th>Date Submitted</th>
+                    <th>Current Stage</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for sub in my_submissions %}
+            {% set step = sub.form_type.workflow_steps | selectattr('step_order','eq',sub.current_step) | first %}
+            <tr>
+                <td><code style="font-size:11px;">{{ sub.tracking_number }}</code></td>
+                <td style="font-size:12px; max-width:220px;">{{ sub.form_type.name }}</td>
+                <td style="font-size:12px;">{{ sub.submitted_at.strftime('%d %b %Y %H:%M') }}</td>
+                <td style="font-size:12px;">
+                    {% if sub.status == 'pending' %}
+                        {{ step.step_name if step else 'Step '~sub.current_step }}
+                    {% elif sub.status == 'approved' %}
+                        Fully Approved
+                    {% else %}
+                        Rejected
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ sub.status }}">
+                        {% if sub.status == 'pending' %}<i class="fas fa-clock"></i>
+                        {% elif sub.status == 'approved' %}<i class="fas fa-check"></i>
+                        {% else %}<i class="fas fa-times"></i>{% endif %}
+                        {{ sub.status|capitalize }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('dashboard.view_submission', sub_id=sub.id) }}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding:40px; text-align:center; color:var(--text-muted);">
+            <i class="fas fa-file-alt" style="font-size:40px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+            <p>You have not submitted any forms yet.</p>
+            <a href="{{ url_for('forms.select_form') }}" class="btn btn-primary" style="margin-top:14px;">
+                <i class="fas fa-plus"></i> Submit Your First Form
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <h3 class="modal-title" style="color:var(--danger);"><i class="fas fa-times-circle"></i> Reject Form</h3>
+        <form method="POST" id="rejectForm">
+            <div class="form-group">
+                <label class="form-label required">Reason for Rejection</label>
+                <textarea name="rejection_reason" class="form-control" rows="4" placeholder="Please provide a clear reason for rejection..." required></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Confirm Rejection</button>
+            </div>
+        </form>
+        <input type="hidden" id="rejectSubId">
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function openRejectModal(subId) {
+    document.getElementById('rejectForm').action = '/forms/reject/' + subId;
+    openModal('rejectModal');
+}
+</script>
+{% endblock %}

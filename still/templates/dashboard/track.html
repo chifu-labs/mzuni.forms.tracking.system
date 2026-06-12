@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Track Form{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1><i class="fas fa-search"></i> Track Form</h1><p>Enter a tracking number to check its status</p></div>
+</div>
+<div class="card" style="max-width:540px; margin-bottom:24px;">
+    <div class="card-header"><i class="fas fa-search"></i><h2>Track by Number</h2></div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">Tracking Number</label>
+                <input type="text" name="tracking_number" class="form-control" placeholder="e.g. ADM/02/11/13/2024/01/ABCD1234" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Track</button>
+        </form>
+    </div>
+</div>
+{% if sub %}
+<div class="card">
+    <div class="card-header"><i class="fas fa-file-alt"></i><h2>{{ sub.form_type.name }}</h2></div>
+    <div class="card-body">
+        <div class="grid-2" style="margin-bottom:16px;">
+            <div>
+                <p style="font-size:12px; color:var(--text-muted);">Tracking Number</p>
+                <code>{{ sub.tracking_number }}</code>
+            </div>
+            <div>
+                <p style="font-size:12px; color:var(--text-muted);">Status</p>
+                <span class="badge badge-{{ sub.status }}">{{ sub.status|upper }}</span>
+            </div>
+            <div>
+                <p style="font-size:12px; color:var(--text-muted);">Submitted</p>
+                <p style="font-size:13px;">{{ sub.submitted_at.strftime('%d %b %Y %H:%M') }}</p>
+            </div>
+            <div>
+                <p style="font-size:12px; color:var(--text-muted);">Current Stage</p>
+                {% set step = sub.form_type.workflow_steps | selectattr('step_order','eq',sub.current_step) | first %}
+                <p style="font-size:13px;">{{ step.step_name if step else 'Completed' }}</p>
+            </div>
+        </div>
+        <a href="{{ url_for('dashboard.view_submission', sub_id=sub.id) }}" class="btn btn-primary">
+            <i class="fas fa-eye"></i> View Full Details
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

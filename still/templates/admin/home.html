@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1><i class="fas fa-home"></i> Admin Dashboard</h1><p>System overview and management</p></div>
+</div>
+<div class="stats-grid" style="margin-bottom:28px;">
+    <div class="stat-card"><span class="stat-icon">👥</span><span class="stat-value">{{ total_users }}</span><span class="stat-label">Total Users</span></div>
+    <div class="stat-card"><span class="stat-icon">📄</span><span class="stat-value">{{ total_submissions }}</span><span class="stat-label">Total Forms</span></div>
+    <div class="stat-card" style="border-left:4px solid var(--warning);"><span class="stat-icon"><i class="fa-solid fa-clock"></i></span><span class="stat-value" style="color:var(--warning);">{{ pending }}</span><span class="stat-label">Pending</span></div>
+    <div class="stat-card" style="border-left:4px solid var(--success);"><span class="stat-icon">✅</span><span class="stat-value" style="color:var(--success);">{{ approved }}</span><span class="stat-label">Approved</span></div>
+    <div class="stat-card" style="border-left:4px solid var(--danger);"><span class="stat-icon">❌</span><span class="stat-value" style="color:var(--danger);">{{ rejected }}</span><span class="stat-label">Rejected</span></div>
+</div>
+<div class="grid-2" style="margin-bottom:24px;">
+    <div>
+        <h3 style="margin-bottom:12px; color:var(--primary);">Quick Links</h3>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary"><i class="fas fa-users"></i> Manage Users</a>
+            <a href="{{ url_for('admin.all_submissions') }}" class="btn btn-outline"><i class="fas fa-file-alt"></i> All Submissions</a>
+
+            <a href="{{ url_for('admin.manage_officers') }}" class="btn btn-outline" style="border-color:#1a3a5c;color:#1a3a5c;"><i class="fas fa-user-tie"></i> Manage Officers</a>
+
+            <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline"><i class="fas fa-history"></i> Audit Logs</a>
+            <form method="POST" action="{{ url_for('admin.clear_recents') }}" onsubmit="return confirm('This will permanently delete ALL submissions, approvals, audit logs, and notifications. Users and officers are kept. Continue?')">
+                <button type="submit" class="btn btn-danger" style="width:100%;"><i class="fas fa-trash-alt"></i> Clear All Records</button>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="fas fa-history"></i><h3>Recent Activity</h3></div>
+        <div class="card-body" style="padding:0; max-height:320px; overflow-y:auto;">
+            {% for log in recent_logs %}
+            <div style="padding:10px 16px; border-bottom:1px solid var(--border); font-size:12px;">
+                <div style="font-weight:600;">{{ log.action }}</div>
+                <div style="color:var(--text-muted); margin-top:2px;">{{ log.user.full_name if log.user else 'System' }} — {{ log.timestamp.strftime('%d %b %Y %H:%M') }}</div>
+                {% if log.details %}<div style="color:#555; margin-top:2px; font-size:11px;">{{ log.details }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
